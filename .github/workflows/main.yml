@@ -15,7 +15,7 @@ jobs:
       # 3. Log in to Salesforce using the "Secret" we saved
       - name: Authenticate to Dev Hub
         run: |
-          echo "${{ secrets.SFDX_AUTH_URL }}" > auth_url.txt
+          echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth_url.txt
           sf org login sfdx-url --sfdx-url-file auth_url.txt --set-default-dev-hub
 
       # 4. Create a temporary Scratch Org to test the code
