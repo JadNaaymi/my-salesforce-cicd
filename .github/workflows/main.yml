@@ -1,5 +1,5 @@
 name: Salesforce CI
-on: [push] # This tells GitHub: "Run this every time I push code automation"
+on: [push] # This tells GitHub: "Run this every time I push code"
 
 jobs:
   validate-code:
