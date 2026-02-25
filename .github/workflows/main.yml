@@ -1,4 +1,4 @@
-name: Salesforce Multi-Org Pipeline
+name: Multi-Org Pipeline
 on:
   push:
     branches: [ main ]
@@ -6,7 +6,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # JOB 1: Test in a Scratch Org (Triggered by Pull Request)
+  # JOB 1: VALIDATION (For Pull Requests)
   validate-feature:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -16,8 +16,8 @@ jobs:
         run: npm install @salesforce/cli --global
       - name: Auth Dev Hub
         run: |
-          echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth.txt
-          sf org login sfdx-url -u auth.txt --set-default-dev-hub
+          echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+          sf org login sfdx-url --sfdx-url-file auth.txt --set-default-dev-hub
       - name: Run CI (Scratch Org)
         run: |
           sf org create scratch -f config/project-scratch-def.json -a temp-org -d -y 1
@@ -25,8 +25,8 @@ jobs:
           sf apex run test --target-org temp-org --wait 10
           sf org delete scratch --target-org temp-org --no-prompt
 
-  # JOB 2: DEPLOYMENT (Runs on Merge to Main)
-  deploy-to-playground:  # Renamed for clarity
+  # JOB 2: DEPLOYMENT (For Merges to Main)
+  deploy-to-playground:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -36,6 +36,6 @@ jobs:
       - name: Auth Target Playground
         run: |
           echo "${{ secrets.SFDX_AUTH_URLLMS }}" > auth.txt
-          sf org login sfdx-url --sfdx-url-file auth.txt --set-default-dev-hub
+          sf org login sfdx-url --sfdx-url-file auth.txt --set-default
       - name: Final Deploy to Playground
         run: sf project deploy start --wait 10
