@@ -1,31 +1,41 @@
-name: Professional Salesforce CI
-on: [push]
+name: Salesforce Multi-Org Pipeline
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  validate-and-test:
+  # JOB 1: Test in a Scratch Org (Triggered by Pull Request)
+  validate-feature:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Salesforce CLI
+      - name: Install CLI
         run: npm install @salesforce/cli --global
-
-      - name: Authenticate to Dev Hub
+      - name: Auth Dev Hub
         run: |
-          echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth_url.txt
-          sf org login sfdx-url --sfdx-url-file auth_url.txt --set-default-dev-hub
+          echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth.txt
+          sf org login sfdx-url -u auth.txt --set-default-dev-hub
+      - name: Run CI (Scratch Org)
+        run: |
+          sf org create scratch -f config/project-scratch-def.json -a temp-org -d -y 1
+          sf project deploy start --target-org temp-org
+          sf apex run test --target-org temp-org --wait 10
+          sf org delete scratch --target-org temp-org --no-prompt
 
-      - name: Create Scratch Org
-        run: sf org create scratch --definition-file config/project-scratch-def.json --alias temp-org --wait 10 --set-default
-
-      - name: Deploy Code
-        run: sf project deploy start --target-org temp-org
-
-      # PROFESSIONAL GATE: Run Tests
-      - name: Run Apex Tests
-        run: sf apex run test --target-org temp-org --wait 10 --result-format human --code-coverage
-
-      # PROFESSIONAL CLEANUP: This runs even if tests fail
-      - name: Delete Scratch Org
-        if: always() 
-        run: sf org delete scratch --target-org temp-org --no-prompt
+  # JOB 2: DEPLOYMENT (Runs on Merge to Main)
+  deploy-to-playground:  # Renamed for clarity
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install CLI
+        run: npm install @salesforce/cli --global
+      - name: Auth Target Playground
+        run: |
+          echo "${{ secrets.SFDX_AUTH_URLLMS }}" > auth.txt
+          sf org login sfdx-url -u auth.txt --set-default
+      - name: Final Deploy to Playground
+        run: sf project deploy start --wait 10
