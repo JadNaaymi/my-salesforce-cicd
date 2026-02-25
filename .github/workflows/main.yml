@@ -1,4 +1,4 @@
-name: Salesforce CI with Testing
+name: Professional Salesforce CI
 on: [push]
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
 
       - name: Authenticate to Dev Hub
         run: |
-          echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth_url.txt
+          echo "${{ secrets.SFDX_AUTH_URL }}" > auth_url.txt
           sf org login sfdx-url --sfdx-url-file auth_url.txt --set-default-dev-hub
 
       - name: Create Scratch Org
@@ -21,6 +21,11 @@ jobs:
       - name: Deploy Code
         run: sf project deploy start --target-org temp-org
 
-      # NEW PROFESSIONAL STEP: Run Apex Tests
+      # PROFESSIONAL GATE: Run Tests
       - name: Run Apex Tests
         run: sf apex run test --target-org temp-org --wait 10 --result-format human --code-coverage
+
+      # PROFESSIONAL CLEANUP: This runs even if tests fail
+      - name: Delete Scratch Org
+        if: always() 
+        run: sf org delete scratch --target-org temp-org --no-prompt
