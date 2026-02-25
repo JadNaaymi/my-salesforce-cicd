@@ -17,7 +17,7 @@ jobs:
       - name: Auth Dev Hub
         run: |
           # Make sure SFDX_AUTH_URL exists in your GitHub Secrets!
-          echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+          echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --set-default-dev-hub
       - name: Run CI (Scratch Org)
         run: |
