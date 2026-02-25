@@ -1,27 +1,26 @@
-name: Salesforce CI
-on: [push] # This tells GitHub: "Run this every time I push code"
+name: Salesforce CI with Testing
+on: [push]
 
 jobs:
-  validate-code:
+  validate-and-test:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout the code from GitHub
       - uses: actions/checkout@v4
 
-      # 2. Install Salesforce CLI on the GitHub server
       - name: Install Salesforce CLI
         run: npm install @salesforce/cli --global
 
-      # 3. Log in to Salesforce using the "Secret" we saved
       - name: Authenticate to Dev Hub
         run: |
           echo "${{ secrets.SFDX_AUTH_URLHUB }}" > auth_url.txt
           sf org login sfdx-url --sfdx-url-file auth_url.txt --set-default-dev-hub
 
-      # 4. Create a temporary Scratch Org to test the code
       - name: Create Scratch Org
         run: sf org create scratch --definition-file config/project-scratch-def.json --alias temp-org --wait 10 --set-default
 
-      # 5. Push the code and see if it breaks
       - name: Deploy Code
         run: sf project deploy start --target-org temp-org
+
+      # NEW PROFESSIONAL STEP: Run Apex Tests
+      - name: Run Apex Tests
+        run: sf apex run test --target-org temp-org --wait 10 --result-format human --code-coverage
