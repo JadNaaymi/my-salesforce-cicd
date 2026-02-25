@@ -36,6 +36,6 @@ jobs:
       - name: Auth Target Playground
         run: |
           echo "${{ secrets.SFDX_AUTH_URLLMS }}" > auth.txt
-          sf org login sfdx-url --sfdx-url-file auth.txt --set-default
+          sf org login sfdx-url --sfdx-url-file auth.txt --set-default-dev-hub
       - name: Final Deploy to Playground
         run: sf project deploy start --wait 10
